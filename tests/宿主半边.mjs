@@ -3,7 +3,7 @@
 // ⚠ 它**不装插件、不碰 DSH、不碰你的会话**：DSH_HOME 指到系统临时目录，
 //   agent 是假的，followup 只是把消息收进数组里。
 // ⚠ 它能验的：默认值 / 归一化 / 落盘 / 安静时段 / 时机因子 / 冷却 / 各种「安全的什么都不做」/
-//   消息形状（role=user、source.kind=her-words）/ developer 拒发 / 换表 / 配置文件坏掉的兜底 /
+//   消息形状（role=user、source.kind=speak-up）/ developer 拒发 / 换表 / 配置文件坏掉的兜底 /
 //   **会话标题来源（抄朗读桥那条路）/ 勾选清单 / 多目标时只挑一个**。
 // ⚠ 它**验不了**的：真的 followup 到活着会话上会不会开一轮（那个必须在 DSH 里跑），
 //   以及真机上 ctx.sessionTitle 到底给不给标题（这里喂的是假服务）。
@@ -103,7 +103,7 @@ const 她说话 = (多久以前毫秒 = 0) =>
 // ---------- 基本 ----------
 报('注册了 4 条路由', 路由.size === 4, [...路由.keys()].join(' '))
 报('定时器挂上（30 分钟）', 停表们.length === 1 && 停表们[0].ms === 1800000)
-let st = await 调('/dsh-her-words/state')
+let st = await 调('/dsh-speak-up/state')
 报('默认值全对（间隔30 / 35% / 1~8 / 20×0.15 / 360×1.5 / 试运行开 / 总开关开 / user）',
   st.配置.间隔分钟 === 30 && st.配置.峰时概率 === 20 && st.配置.谷时概率 === 60 &&
   st.配置.安静起 === 1 && st.配置.安静止 === 8 &&
@@ -131,24 +131,24 @@ const 找 = (id) => 清单.find((s) => s.id === id) || {}
   找('sess-没名字').有agent === false && 找('sess-没名字').状态 === '没活着')
 
 // ---------- 没勾 → 什么都不做 ----------
-let r = await 调('/dsh-her-words/roll', { 模式: '真发' })
+let r = await 调('/dsh-speak-up/roll', { 模式: '真发' })
 报('一个都没勾 → 挡住并记账', 甲.收到的.length === 0 && r.日志.at(-1).文本.includes('还没勾'), r.日志.at(-1).文本)
 
 // ---------- 存 + 归一化 + 落盘 ----------
-r = await 调('/dsh-her-words/save', { 目标会话: ['sess-abc'], 间隔分钟: '7', 峰时概率: '150', 安静起: 0, 安静止: 0, 近因子: '0.2' })
+r = await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc'], 间隔分钟: '7', 峰时概率: '150', 安静起: 0, 安静止: 0, 近因子: '0.2' })
 报('字符串数字被洗成数字、超范围被夹住', r.配置.间隔分钟 === 7 && r.配置.峰时概率 === 100 && r.配置.近因子 === 0.2)
 报('起===止 → 不启用安静时段', r.配置.安静起 === 0 && r.配置.安静止 === 0)
-报('写盘成功', existsSync(join(家, 'her-words-config.json')) &&
-  JSON.parse(readFileSync(join(家, 'her-words-config.json'), 'utf8')).目标会话[0] === 'sess-abc')
+报('写盘成功', existsSync(join(家, 'speak-up-config.json')) &&
+  JSON.parse(readFileSync(join(家, 'speak-up-config.json'), 'utf8')).目标会话[0] === 'sess-abc')
 
 // 老配置（字符串形状，还带逗号）也要能吃
-writeFileSync(join(家, 'her-words-config.json'), JSON.stringify({ 目标会话: 'sess-abc, ' + ID_长 }), 'utf8')
-st = await 调('/dsh-her-words/state')
+writeFileSync(join(家, 'speak-up-config.json'), JSON.stringify({ 目标会话: 'sess-abc, ' + ID_长 }), 'utf8')
+st = await 调('/dsh-speak-up/state')
 报('老配置里的字符串（带逗号）会被洗成 id 数组',
   Array.isArray(st.配置.目标会话) && st.配置.目标会话.length === 2, JSON.stringify(st.配置.目标会话))
 报('「已勾情况」标出了每个勾着的会话活着没',
   st.目标情况.length === 2 && st.目标情况.every((x) => x.活着 === true) && st.目标活着 === true)
-await 调('/dsh-her-words/save', {
+await 调('/dsh-speak-up/save', {
   目标会话: ['sess-abc'], 间隔分钟: 30, 近阈值分钟: 20, 近因子: 0.15,
   远阈值分钟: 360, 远因子: 1.5, 试运行: true, 安静起: 1, 安静止: 8,
   // ⚠ 这几条只验「时机因子」，所以两格概率都显式给 100 —— 这样不管跑测试时是峰时还是谷时，
@@ -169,7 +169,7 @@ await 滴答()
 await 滴答()
 报('时机因子：1 小时没说话 → 因子 1', 日志.at(-1).includes('因子 1'), 日志.at(-1))
 
-await 调('/dsh-her-words/save', { 峰时概率: 0, 谷时概率: 0, 近阈值分钟: 0 })
+await 调('/dsh-speak-up/save', { 峰时概率: 0, 谷时概率: 0, 近阈值分钟: 0 })
 await 滴答()
 报('两格概率都是 0 → 永不掷中', 甲.收到的.length === 0 && 日志.at(-1).includes('没掷中'), 日志.at(-1))
 
@@ -208,7 +208,7 @@ const 谷时档 = 插件.算基础概率(假配置, 某时(24, 10))
 // ---------- 峰谷分时：接在算概率上（走定时这条路，看记账里的百分比）----------
 她说话(60 * 60 * 1000) // 距上次说话 60 分钟 → 时机因子 1
 // ① 时机因子仍要照乘：两格都给 40、近因子 0.15 → 40 × 0.15 = 6%（跟当前是峰是谷无关）
-await 调('/dsh-her-words/save', { 峰时概率: 40, 谷时概率: 40, 近阈值分钟: 20, 近因子: 0.15 })
+await 调('/dsh-speak-up/save', { 峰时概率: 40, 谷时概率: 40, 近阈值分钟: 20, 近因子: 0.15 })
 她说话(0) // 刚说过话 → 近因子生效
 await 滴答()
 报('峰时/谷时概率 40 × 近因子 0.15 = 6%（时机因子照样乘进去）',
@@ -222,7 +222,7 @@ await 滴答()
 
 // ③ 记账里的档位跟 判峰时() 对得上（当前真实时刻算出来的那一档）
 const 未是峰时 = 插件.判峰时(new Date())
-await 调('/dsh-her-words/save', { 峰时概率: 30, 谷时概率: 70 })
+await 调('/dsh-speak-up/save', { 峰时概率: 30, 谷时概率: 70 })
 await 滴答()
 报('记账里的档位和 判峰时(现在) 一致，并且用的是对应那格概率',
   未是峰时 ? (日志.at(-1).includes('用峰时概率 30%') && 日志.at(-1).includes('30.0%'))
@@ -230,47 +230,47 @@ await 滴答()
   日志.at(-1))
 
 // ④ 老配置里的「概率」不再读：文件里只有旧键 → 用两格默认值，且归一化结果里没有「概率」
-writeFileSync(join(家, 'her-words-config.json'), JSON.stringify({ 概率: 80, 目标会话: ['sess-abc'] }), 'utf8')
-const 老配置 = await 调('/dsh-her-words/state')
+writeFileSync(join(家, 'speak-up-config.json'), JSON.stringify({ 概率: 80, 目标会话: ['sess-abc'] }), 'utf8')
+const 老配置 = await 调('/dsh-speak-up/state')
 报('老配置里的「概率: 80」被丢掉，两格回到默认 20 / 60',
   老配置.配置.峰时概率 === 20 && 老配置.配置.谷时概率 === 60 && 老配置.配置.概率 === undefined,
   JSON.stringify(老配置.配置))
-await 调('/dsh-her-words/save', { 峰时概率: 40, 谷时概率: 40 })
+await 调('/dsh-speak-up/save', { 峰时概率: 40, 谷时概率: 40 })
 报('两格超范围会被夹住（150 → 100）',
-  (await 调('/dsh-her-words/save', { 峰时概率: '150', 谷时概率: '-5' })).配置.峰时概率 === 100 &&
-  (await 调('/dsh-her-words/state')).配置.谷时概率 === 0)
-await 调('/dsh-her-words/save', { 峰时概率: 100, 谷时概率: 100 })
+  (await 调('/dsh-speak-up/save', { 峰时概率: '150', 谷时概率: '-5' })).配置.峰时概率 === 100 &&
+  (await 调('/dsh-speak-up/state')).配置.谷时概率 === 0)
+await 调('/dsh-speak-up/save', { 峰时概率: 100, 谷时概率: 100 })
 
 // ---------- 安静时段 ----------
 const 小时 = new Date().getHours()
-await 调('/dsh-her-words/save', { 峰时概率: 100, 谷时概率: 100, 近阈值分钟: 20, 安静起: 小时, 安静止: (小时 + 1) % 24 })
+await 调('/dsh-speak-up/save', { 峰时概率: 100, 谷时概率: 100, 近阈值分钟: 20, 安静起: 小时, 安静止: (小时 + 1) % 24 })
 await 滴答()
 报('安静时段内 → 定时这轮不掷', 日志.at(-1).includes('安静时段'), 日志.at(-1))
 // ⚠ 起 === 止 那条她特意提过两次，所以这里**行为上也验一遍**（不只是验配置归一化）：
 //   把起止都设成当前小时 → 应当**不被拦住**，正常往下掷
-await 调('/dsh-her-words/save', { 安静起: 小时, 安静止: 小时 })
+await 调('/dsh-speak-up/save', { 安静起: 小时, 安静止: 小时 })
 await 滴答()
 报('安静时段 起 === 止 → 不启用：当前小时也不会被拦（照样往下掷）',
   !日志.at(-1).includes('安静时段') && (日志.at(-1).includes('没掷中') || 日志.at(-1).includes('掷中')), 日志.at(-1))
-await 调('/dsh-her-words/save', { 安静起: 23, 安静止: 7 })
+await 调('/dsh-speak-up/save', { 安静起: 23, 安静止: 7 })
 await 滴答()
 报('跨午夜安静时段（23~7）不误判', true)
 
 // ---------- 勾了但没活着 / 勾了在忙 ----------
-await 调('/dsh-her-words/save', { 安静起: 0, 安静止: 0, 目标会话: ['sess-不存在'] })
+await 调('/dsh-speak-up/save', { 安静起: 0, 安静止: 0, 目标会话: ['sess-不存在'] })
 await 滴答()
 报('勾的会话没有活着的 agent → 什么都不做（不唤醒冷会话）', 日志.at(-1).includes('都不能说话'), 日志.at(-1))
 
-await 调('/dsh-her-words/save', { 目标会话: [ID_长] })
+await 调('/dsh-speak-up/save', { 目标会话: [ID_长] })
 乙.status = 'running'
 await 滴答()
 报('勾的唯一一个在忙 → 什么都不做', 日志.at(-1).includes('都不能说话'), 日志.at(-1))
 
 // ---------- 多目标：一次只在其中一个里开口 ----------
-await 调('/dsh-her-words/save', { 目标会话: ['sess-abc', ID_长] })
+await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc', ID_长] })
 甲.收到的.length = 0
 乙.收到的.length = 0
-await 调('/dsh-her-words/roll', { 模式: '真发' }) // 乙还在 running → 只能挑 甲
+await 调('/dsh-speak-up/roll', { 模式: '真发' }) // 乙还在 running → 只能挑 甲
 报('勾了 2 个、其中 1 个在忙 → 只发给不忙的那个',
   甲.收到的.length === 1 && 乙.收到的.length === 0, `甲${甲.收到的.length} 乙${乙.收到的.length}`)
 乙.status = 'idle'
@@ -280,7 +280,7 @@ let 发乙 = 0
 for (let i = 0; i < 40; i++) {
   甲.收到的.length = 0
   乙.收到的.length = 0
-  await 调('/dsh-her-words/roll', { 模式: '真发' })
+  await 调('/dsh-speak-up/roll', { 模式: '真发' })
   发甲 += 甲.收到的.length
   发乙 += 乙.收到的.length
 }
@@ -290,15 +290,15 @@ for (let i = 0; i < 40; i++) {
 
 // ---------- 演练 / 真发 ----------
 甲.收到的.length = 0
-r = await 调('/dsh-her-words/roll', { 模式: '演练' })
+r = await 调('/dsh-speak-up/roll', { 模式: '演练' })
 报('演练：只记账，绝不真发', 甲.收到的.length === 0 && r.日志.at(-1).文本.includes('演练'), r.日志.at(-1).文本)
 
-await 调('/dsh-her-words/save', { 目标会话: ['sess-abc'] })
+await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc'] })
 甲.收到的.length = 0
-await 调('/dsh-her-words/roll', { 模式: '真发' })
+await 调('/dsh-speak-up/roll', { 模式: '真发' })
 const m = 甲.收到的[0]
-报('真发：followup 收到一条形状合法的消息（role=user / source.kind=her-words / text 块 / id 非空）',
-  甲.收到的.length === 1 && m.role === 'user' && m.source.kind === 'her-words' &&
+报('真发：followup 收到一条形状合法的消息（role=user / source.kind=speak-up / text 块 / id 非空）',
+  甲.收到的.length === 1 && m.role === 'user' && m.source.kind === 'speak-up' &&
   Array.isArray(m.content) && m.content[0].type === 'text' &&
   typeof m.id === 'string' && m.id.length > 0, JSON.stringify(m))
 
@@ -307,38 +307,38 @@ await 滴答()
 报('自己刚开过口 → 自动这轮不重复（冷却）', 甲.收到的.length === 0 && 日志.at(-1).includes('刚开过口'), 日志.at(-1))
 
 // ---------- developer 角色 ----------
-await 调('/dsh-her-words/save', { 角色: 'developer' })
+await 调('/dsh-speak-up/save', { 角色: 'developer' })
 甲.收到的.length = 0
-r = await 调('/dsh-her-words/roll', { 模式: '真发' })
+r = await 调('/dsh-speak-up/roll', { 模式: '真发' })
 报('角色 developer → 主动拒发并记账（不写坏会话日志）',
   甲.收到的.length === 0 && r.日志.at(-1).文本.includes('developer'), r.日志.at(-1).文本)
-await 调('/dsh-her-words/save', { 角色: 'user' })
+await 调('/dsh-speak-up/save', { 角色: 'user' })
 
 // ---------- 总开关 ----------
-await 调('/dsh-her-words/save', { 总开关: false, 近阈值分钟: 0, 峰时概率: 100, 谷时概率: 100 })
+await 调('/dsh-speak-up/save', { 总开关: false, 近阈值分钟: 0, 峰时概率: 100, 谷时概率: 100 })
 await 滴答()
 报('总开关关 → 定时这轮不动', 日志.at(-1).includes('总开关'), 日志.at(-1))
-await 调('/dsh-her-words/save', { 总开关: true, 试运行: true })
+await 调('/dsh-speak-up/save', { 总开关: true, 试运行: true })
 
 // ---------- 新建小屋：追加勾选，不覆盖 ----------
-await 调('/dsh-her-words/save', { 目标会话: ['sess-abc'] })
-r = await 调('/dsh-her-words/new-session', { 设为目标: true })
+await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc'] })
+r = await 调('/dsh-speak-up/new-session', { 设为目标: true })
 报('新建会话后是「追加」勾上，不覆盖原来勾的',
   r.新会话 === 'sess-新建的' && r.配置.目标会话.length === 2 && r.配置.目标会话[0] === 'sess-abc',
   JSON.stringify(r.配置.目标会话))
-await 调('/dsh-her-words/save', { 目标会话: ['sess-abc'] })
+await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc'] })
 
 // ---------- 换表 ----------
 const 表数前 = 停表们.length
-await 调('/dsh-her-words/save', { 间隔分钟: 5 })
+await 调('/dsh-speak-up/save', { 间隔分钟: 5 })
 await 滴答()
 await new Promise((s) => setTimeout(s, 30))
 报('改了间隔 → 下一轮自动换表（不用重启插件）',
   停表们.length === 表数前 + 1 && 停表们.at(-1).ms === 300000, `表数 ${停表们.length}`)
 
 // ---------- 坏配置 ----------
-writeFileSync(join(家, 'her-words-config.json'), '{ 这不是 json', 'utf8')
-const st2 = await 调('/dsh-her-words/state')
+writeFileSync(join(家, 'speak-up-config.json'), '{ 这不是 json', 'utf8')
+const st2 = await 调('/dsh-speak-up/state')
 报('配置文件坏掉 → 回到默认值，不抛错', st2.ok === true && st2.配置.间隔分钟 === 30)
 
 // ---------- 完全没有标题服务的部署：第二条路（投影缓存）必须还能出标题 ----------
@@ -362,7 +362,7 @@ const st2 = await 调('/dsh-her-words/state')
   let 结果 = null
   try {
     const res = 造res()
-    await 只读路由.get('/dsh-her-words/state')(
+    await 只读路由.get('/dsh-speak-up/state')(
       { [Symbol.asyncIterator]: async function* () { yield Buffer.from('{}') } }, res)
     结果 = res.体
   } catch (e) { 崩 = true }

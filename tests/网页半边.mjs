@@ -28,7 +28,7 @@ globalThis.fetch = async (url, 选项) => {
   const 目标 = 体 && Array.isArray(体.目标会话) ? 体.目标会话 : []
   return {
     json: async () => ({
-      ok: true, 说: '保存好了', 版本: '0.1.0', 配置文件: 'C:/x/her-words-config.json',
+      ok: true, 说: '保存好了', 版本: '0.1.0', 配置文件: 'C:/x/speak-up-config.json',
       配置: 体 || {},
       日志: [],
       目标情况: 目标.map((id) => ({
@@ -85,11 +85,11 @@ const slots = {
   register: (定义, c) => { 注册 = 定义; 组件 = c; return () => {} },
 }
 
-报('模块 id 正确', 捕获.id === 'dsh-her-words', 捕获.id)
+报('模块 id 正确', 捕获.id === 'dsh-speak-up', 捕获.id)
 报('inject 只依赖 slots', Array.isArray(exports.inject) && exports.inject.join() === 'slots')
 exports.apply({ get: (n) => (n === 'slots' ? slots : undefined) })
 报('挂到 settings.section 槽位',
-  注册 !== null && 注册.name === 'settings.section' && 注册.id === 'her-words', JSON.stringify(注册))
+  注册 !== null && 注册.name === 'settings.section' && 注册.id === 'speak-up', JSON.stringify(注册))
 
 const 渲染 = () => { 下标 = 0; 要重渲染 = false; return 组件() }
 const 首次渲染 = (初始态) => { 状态槽 = [初始态]; return 渲染() }
@@ -125,7 +125,7 @@ const 会话清单 = [
 const 造态 = (目标, 日志 = [{ 时间: '01-01 00:00:00', 文本: '已装好' }]) => ({
   ok: true,
   版本: '0.1.0',
-  配置文件: 'C:/x/her-words-config.json',
+  配置文件: 'C:/x/speak-up-config.json',
   活着的会话: 会话清单,
   目标情况: 目标.map((id) => {
     const s = 会话清单.find((x) => x.id === id) || {}
@@ -230,8 +230,8 @@ const 无题行 = 找行(树, '（还没起名）')
 找行(树, '乙会话').kids[0].p.onChange({ target: { checked: true } })
 报('点乙会话 → 触发了重渲染', 要重渲染 === true)
 await new Promise((r) => setTimeout(r, 0)) // 等自动保存那一下
-报('点一下**真的发了保存请求**（POST /dsh-her-words/save）',
-  请求.length === 1 && 请求[0].url === '/dsh-her-words/save' && 请求[0].方法 === 'POST',
+报('点一下**真的发了保存请求**（POST /dsh-speak-up/save）',
+  请求.length === 1 && 请求[0].url === '/dsh-speak-up/save' && 请求[0].方法 === 'POST',
   JSON.stringify(请求))
 报('自动保存的内容就是勾上的那两个 id（含刚点的那个）',
   请求.length === 1 && Array.isArray(请求[0].体.目标会话) && 请求[0].体.目标会话.length === 2 &&

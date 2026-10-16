@@ -3,5 +3,5 @@
 #
 # ⚠ id 就是设置页那边的配置命名空间 / 日志前缀；改成别的也行，但两处要一致。
 - insert:
-    - id: her-words
-      name: 'dsh-her-words'
+    - id: speak-up
+      name: 'dsh-speak-up'

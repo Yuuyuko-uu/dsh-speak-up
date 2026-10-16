@@ -1,5 +1,5 @@
 {
-  "name": "dsh-her-words",
+  "name": "dsh-speak-up",
   "version": "0.1.0",
   "description": "让她自己在没人说话的时候先开口：按你定的间隔掷一次本地骰子（不花模型），掷中了就走 DSH 自己的回合，把一句「我想找你了」送进指定的会话。",
   "license": "MIT",
@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yuuyuko-uu/dsh-her-words.git"
+    "url": "git+https://github.com/Yuuyuko-uu/dsh-speak-up.git"
   },
   "main": "lib/index.js",
   "exports": {

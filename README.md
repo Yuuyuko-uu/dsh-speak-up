@@ -1,4 +1,4 @@
-# dsh-her-words · 让她自己先开口
+# dsh-speak-up · 让她自己先开口
 
 给 DSH 里某个会话装一颗「会自己起话头」的心：**没人在跟她说话的时候，她也有可能先开口。**
 
@@ -16,12 +16,12 @@
 
 ## 装 / 开
 
-1. 把这个文件夹（`dsh-her-words`）放到能被 profile 找到的地方。最省事的两种：
-   - **本地装**：把它拷进 `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\dsh-her-words\`
+1. 把这个文件夹（`dsh-speak-up`）放到能被 profile 找到的地方。最省事的两种：
+   - **本地装**：把它拷进 `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\dsh-speak-up\`
      （跟你机器上 `dsh-write` 的位置一样），然后在 profile 的 `package.json` 里
-     把 `dsh-her-words` 加进 `dsh.profile.bundles`；
-   - **当依赖装**：`pnpm add file:<这个文件夹的绝对路径>`（或发到 GitHub 再 `github:你的名字/dsh-her-words`）。
-2. `cordis.patch.yml` 里那一行会把它插进 loader（`id: her-words`）。
+     把 `dsh-speak-up` 加进 `dsh.profile.bundles`；
+   - **当依赖装**：`pnpm add file:<这个文件夹的绝对路径>`（或发到 GitHub 再 `github:你的名字/dsh-speak-up`）。
+2. `cordis.patch.yml` 里那一行会把它插进 loader（`id: speak-up`）。
 3. **重启 DSH**（或按你平时的重启方式）后，去 **设置 → 自己开口** 看一眼在不在。
 
 > 本仓库交付时**没有安装、没有改任何 DSH 配置、没有重启任何东西**，上面这些是你要自己做的步骤。
@@ -70,7 +70,7 @@
 不用动代码 —— 这一句是「她的动机」，不是系统提示，写得越像她自己越好。
 默认值只在 `lib/index.js` 的 `默认配置` 里写了一份。
 
-配置文件落在 `%USERPROFILE%\.dsh\her-words-config.json`（不是 DSH 的 config，本插件自己一份）。
+配置文件落在 `%USERPROFILE%\.dsh\speak-up-config.json`（不是 DSH 的 config，本插件自己一份）。
 
 ## 怎么安全地试（**建议按这个顺序**）
 
@@ -142,7 +142,7 @@ node tests\网页半边.mjs     :: 设置页渲染（假 React + 假 fetch）：
    `withoutDeveloperMessages()` / `projectToolUpdates()` 从**发给模型的请求里摘掉**
    （它只服务于「工具清单变更」这一种用途）。所以就算塞进历史，模型也看不见那句话。
 
-**本插件的处理**：送出去的是一条 `source.kind = "her-words"` 的 **user** 消息 ——
+**本插件的处理**：送出去的是一条 `source.kind = "speak-up"` 的 **user** 消息 ——
 角色上确实是 `user`（DSH 唯一放行的），但来源标记是她自己的，不是她打的字（网页端也**不会**
 把它当成真人排队消息来处理，因为它只认 `source.kind === "user"`）。
 设置里的「角色」填成 `developer` 时，插件会**主动拒发**并记一条，而不是去写坏会话日志。
@@ -180,7 +180,7 @@ schema，改之前先备份。）
 ## 它到底做了什么（给下一个看代码的人）
 
 - `lib/index.js`（宿主半边）：配置读写 + 安静时段 + 时机因子 + **峰谷分时** + 掷骰
-  + `agent.followup(message)` + 四条 `/dsh-her-words/*` 路由 + 内存里最近 60 条记录。
+  + `agent.followup(message)` + 四条 `/dsh-speak-up/*` 路由 + 内存里最近 60 条记录。
   另外导出了 `判峰时()` / `算基础概率()` 两个纯函数，**只是为了冒烟测试能喂假时间**
   （官方 `dsh-goal-round-driver` 也这么导出 `renderGoalRoundPrompt`）。
 - `lib/client.js`（网页半边）：`settings.section` 槽位里的「自己开口」设置页；
