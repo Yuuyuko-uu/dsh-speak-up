@@ -1,0 +1,7 @@
+# 发布/安装时不进 git 的东西
+# 内部交接说明（写给开发者的备忘，不对外）：
+交给小贝壳.md
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
