@@ -15,9 +15,9 @@
     "type": "git",
     "url": "git+https://github.com/Yuuyuko-uu/dsh-speak-up.git"
   },
-  "main": "lib/index.js",
+  "main": "lib/host.js",
   "exports": {
-    ".": "./lib/index.js",
+    ".": "./lib/host.js",
     "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"

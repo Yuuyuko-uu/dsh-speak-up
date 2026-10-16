@@ -1,4 +1,4 @@
-// 宿主半边冒烟测试 —— 用假的 ctx / 假的 agent 把 lib/index.js 跑一遍。
+// 宿主半边冒烟测试 —— 用假的 ctx / 假的 agent 把 lib/host.js 跑一遍。
 //
 // ⚠ 它**不装插件、不碰 DSH、不碰你的会话**：DSH_HOME 指到系统临时目录，
 //   agent 是假的，followup 只是把消息收进数组里。
@@ -33,7 +33,7 @@ const 铺投影 = (文件名, rows) => writeFileSync(join(投影目录, 文件�
 // ③ 只有 titleInput（还没有正式标题）→ 用它的第一条消息兜底
 铺投影(ID_首条, { titleInput: { ver: 3, seq: 4, val: { first: { seq: 4, text: '  帮我看看这段代码有什么问题  ' } } } })
 
-const 插件 = await import(new URL('../lib/index.js', import.meta.url).href)
+const 插件 = await import(new URL('../lib/host.js', import.meta.url).href)
 
 const 路由 = new Map()
 const 事件 = new Map()
@@ -356,7 +356,7 @@ const st2 = await 调('/dsh-speak-up/state')
     // 注意：**没有 sessionTitle** 这个服务
     get: (n) => (n === 'sessions' ? 会话服务 : undefined),
   }
-  const 插件2 = await import(new URL('../lib/index.js', import.meta.url).href + '?v=2')
+  const 插件2 = await import(new URL('../lib/host.js', import.meta.url).href + '?v=2')
   插件2.apply(没标题ctx)
   let 崩 = false
   let 结果 = null
