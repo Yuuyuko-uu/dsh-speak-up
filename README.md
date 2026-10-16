@@ -14,21 +14,43 @@
 
 ---
 
-## 装 / 开
+## 装
 
-1. 把这个文件夹（`dsh-speak-up`）放到能被 profile 找到的地方。最省事的两种：
-   - **本地装**：把它拷进 `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\dsh-speak-up\`
-     （跟你机器上 `dsh-write` 的位置一样），然后在 profile 的 `package.json` 里
-     把 `dsh-speak-up` 加进 `dsh.profile.bundles`；
-   - **当依赖装**：`pnpm add file:<这个文件夹的绝对路径>`（或发到 GitHub 再 `github:你的名字/dsh-speak-up`）。
-2. `cordis.patch.yml` 里那一行会把它插进 loader（`id: speak-up`）。
-3. **重启 DSH**（或按你平时的重启方式）后，去 **设置 → 主动搭话** 看一眼在不在。
+### 一、在 DSH 里装（推荐）
 
-> 本仓库交付时**没有安装、没有改任何 DSH 配置、没有重启任何东西**，上面这些是你要自己做的步骤。
+打开 **设置 → 插件 → 安装**，把这一行填进去：
 
-## 开
+```
+github:Yuuyuko-uu/dsh-speak-up
+```
 
-设置页里从上到下：
+或者命令行（`--profile` 照你平时那个写；桌面端一般是 `desktop`、网页端是 `web`）：
+
+```bash
+dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
+```
+
+装完**重启一次 DSH**，然后去 **设置 → 主动搭话** 看一眼在不在。
+
+### 二、手动装（没有 `dsh` 命令、或者装不动的时候）
+
+1. 把这个文件夹放到 profile 能找到的地方：
+   `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\dsh-speak-up\`
+2. 在 profile 的 `package.json` 里，把 `dsh-speak-up` 加进 `dsh.profile.bundles` 数组；
+3. `cordis.patch.yml` 里那一行会把它插进 loader（`id: speak-up`）；
+4. **重启 DSH**。
+
+### 三、开发时（想改代码、改完就想看到）
+
+上面那个 `node_modules\dsh-speak-up` 做成**指向你这个文件夹的目录联接**（junction / 符号链接），
+或者 `pnpm add link:<这个文件夹的绝对路径>` —— 这样改的就是装的那一份。
+
+> ⚠ 本仓库**自己不装、不改任何 DSH 配置、不重启任何东西**：上面三步都由装的人自己做。
+> ⚠ 改完插件代码，**只重启 DSH 才一定生效**（关掉插件再打开、重装都不一定重新读代码）。
+
+## 怎么用
+
+设置页（**设置 → 主动搭话**）里从上到下：
 
 | 项 | 默认 | 说明 |
 | --- | --- | --- |
@@ -196,5 +218,7 @@ schema，改之前先备份。）
   另外导出了 `判峰时()` / `算基础命中线()` / `算命中线()` 三个纯函数，**只是为了冒烟测试能喂假时间、
   能把"连着没中几次"直接喂进去**（官方 `dsh-goal-round-driver` 也这么导出 `renderGoalRoundPrompt`）。
 - `lib/client.js`（网页半边）：`settings.section` 槽位里的「主动搭话」设置页；
-  会话清单来自宿主（标题两条来源），**勾选/取消立刻自动保存**，数字/文案类改完要点「保存设置」。
+  会话清单来自宿主（标题两条来源），**勾选/取消立刻自动保存**，数字/文案类改完要点「保存设置」
+  （有没保存的改动时，底下会自己浮出一条保存条）。
 - 两边**只有一份掷骰逻辑**（在宿主那边），网页只负责读写和显示。
+- `CHANGELOG.md`（[改动记录](CHANGELOG.md)）：每一次改动一行一条。**版本号规矩：每改一次 +0.0.1，末位满 10 进位。**
