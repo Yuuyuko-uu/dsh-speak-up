@@ -313,5 +313,42 @@ try {
 } catch (e) { 没崩 = false; console.log(e) }
 报('没有会话 / 没有日志 / 没有目标情况时也能渲染（旧数据形状）', 没崩)
 
+// ---------- 有改动 → 底部浮出「保存设置」条（她的要求：不用每次往下翻）----------
+const 全部节点 = (树) => {
+  const 出 = []
+  const 走 = (n) => {
+    if (!n || typeof n !== 'object') return
+    if (Array.isArray(n)) return n.forEach(走)
+    出.push(n)
+    ;(n.kids || []).forEach(走)
+  }
+  走(树)
+  return 出
+}
+const 是悬浮条 = (n) => !!(n && n.p && n.p.style && n.p.style.position === 'sticky' && n.p.style.bottom === 0)
+
+const 干净树 = 首次渲染(造态(['sess-abc']))
+报('没有改动时**不**渲染悬浮保存条（平时不挡视线）', 全部节点(干净树).filter(是悬浮条).length === 0)
+
+const 数字框 = 全部节点(干净树).find((n) => n.t === 'input' && n.p.type === 'number')
+报('页面里有数字输入框（拿它试一下）', !!数字框, 数字框 ? '值=' + 数字框.p.value : '没找到')
+if (数字框) 数字框.p.onChange({ target: { value: '35' } })
+
+const 脏树 = 渲染()
+const 浮条 = 全部节点(脏树).filter(是悬浮条)
+报('一改数字 → 底下立刻冒出保存条（带「有改动还没保存」+ 保存按钮）',
+  浮条.length === 1 &&
+    JSON.stringify(浮条[0]).includes('有改动还没保存') &&
+    JSON.stringify(浮条[0]).includes('保存设置'),
+  浮条.length ? JSON.stringify(浮条[0].kids).slice(0, 150) : '没冒出来')
+
+const 存键 = 浮条.length ? 全部节点(浮条[0]).find((n) => n.t === 'button' && n.p.title === '保存设置') : null
+报('保存条上那个按钮点得动（就是「保存设置」本体）', !!存键)
+if (存键) {
+  await 存键.p.onClick()
+  const 存完树 = 渲染()
+  报('保存完 → 保存条自己收起来', 全部节点(存完树).filter(是悬浮条).length === 0)
+}
+
 console.log(`\n${挂 === 0 ? '全部通过 ✅' : `有 ${挂} 条没过 ❌`}`)
 process.exitCode = 挂 === 0 ? 0 : 1
