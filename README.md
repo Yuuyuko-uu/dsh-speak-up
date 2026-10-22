@@ -44,16 +44,27 @@ dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
 
 > ⚠️ **改 `package.json` 一定要存成 UTF-8 无 BOM**。存成带 BOM 的话，DSH 下次启动会直接起不来，
 > 报 `Unexpected token '﻿' … is not valid JSON`（看着像插件坏了，其实只是开头多了三个看不见的字节）。
-> 检查开头是不是 `EF BB BF`（有就是带 BOM）：
+> 检查是哪个文件（不同装法位置不一样，别猜 —— 真正的 profile 目录里同时有 `cordis.yml`、`cordis.patch.yml`、`package.json`）：
 >
 > ```powershell
-> Format-Hex "$env:USERPROFILE\.dsh\profiles\desktop\package.json" -Count 3
+> Get-ChildItem C:\,D:\,E:\ -Directory -Filter profiles -Recurse -Depth 4 -ErrorAction SilentlyContinue |
+>   ForEach-Object {
+>     Get-ChildItem $_.FullName -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+>       $p = Join-Path $_.FullName 'package.json'
+>       if ((Test-Path (Join-Path $_.FullName 'cordis.patch.yml')) -and (Test-Path $p)) {
+>         $b = [System.IO.File]::ReadAllBytes($p)
+>         $bom = ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF)
+>         "{0}   BOM={1}" -f $p, $bom
+>       }
+>     }
+>   }
 > ```
 >
-> 修（存成无 BOM）：
+> **`BOM=True` 的那一行就是要修的**（标准安装在 `C:\Users\<你>\.dsh\profiles\<档名>\package.json`）。
+> 去掉 BOM（路径换成上面那一行）：
 >
 > ```powershell
-> $p = "$env:USERPROFILE\.dsh\profiles\desktop\package.json"
+> $p = "把上面 BOM=True 那一行的路径粘到这里"
 > [System.IO.File]::WriteAllText($p, [System.IO.File]::ReadAllText($p), (New-Object System.Text.UTF8Encoding($false)))
 > ```
 >
