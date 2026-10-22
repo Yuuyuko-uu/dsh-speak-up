@@ -32,6 +32,8 @@ dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
 
 装完**重启一次 DSH**，然后去 **设置 → 主动搭话** 看一眼在不在。
 
+> ⭐ 最省事的一条：把仓库链接贴给你自己的 DSH，说「**帮我装这个插件**」。
+
 ### 二、手动装（没有 `dsh` 命令、或者装不动的时候）
 
 1. 把这个文件夹放到 profile 能找到的地方：
@@ -39,6 +41,24 @@ dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
 2. 在 profile 的 `package.json` 里，把 `dsh-speak-up` 加进 `dsh.profile.bundles` 数组；
 3. `cordis.patch.yml` 里那一行会把它插进 loader（`id: speak-up`）；
 4. **重启 DSH**。
+
+> ⚠️ **改 `package.json` 一定要存成 UTF-8 无 BOM**。存成带 BOM 的话，DSH 下次启动会直接起不来，
+> 报 `Unexpected token '﻿' … is not valid JSON`（看着像插件坏了，其实只是开头多了三个看不见的字节）。
+> 检查开头是不是 `EF BB BF`（有就是带 BOM）：
+>
+> ```powershell
+> Format-Hex "$env:USERPROFILE\.dsh\profiles\desktop\package.json" -Count 3
+> ```
+>
+> 修（存成无 BOM）：
+>
+> ```powershell
+> $p = "$env:USERPROFILE\.dsh\profiles\desktop\package.json"
+> [System.IO.File]::WriteAllText($p, [System.IO.File]::ReadAllText($p), (New-Object System.Text.UTF8Encoding($false)))
+> ```
+>
+> 让 AI 帮你改时，别让它用 `Set-Content -Encoding UTF8` 或 `Out-File -Encoding utf8`
+> —— Windows 自带的这两个默认**带 BOM**。
 
 ### 三、开发时（想改代码、改完就想看到）
 
