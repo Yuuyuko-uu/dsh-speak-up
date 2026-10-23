@@ -142,6 +142,32 @@ r = await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc'], 间隔分钟: 
 报('写盘成功', existsSync(join(家, 'speak-up-config.json')) &&
   JSON.parse(readFileSync(join(家, 'speak-up-config.json'), 'utf8')).目标会话[0] === 'sess-abc')
 
+// ⭐ 2026-10-23 回归：同一会话的两种写法（`xxx` / `session-xxx`）不能当成两个
+{
+  const 双写 = await 调('/dsh-speak-up/save', { 目标会话: [ID_裸, 'session-' + ID_裸] })
+  报('两种写法的同一个会话 → 只留一条', 双写.配置.目标会话.length === 1, JSON.stringify(双写.配置.目标会话))
+  const 清 = await 调('/dsh-speak-up/state', {})
+  const 那行 = (清.活着的会话 || []).filter((s) => s.id === ID_裸 || s.id === 'session-' + ID_裸)
+  报('清单里也只出现一次，而且是「勾着」', 那行.length === 1 && 那行[0].勾着 === true, JSON.stringify(那行))
+  报('盘上存的那份也被洗干净了', JSON.parse(readFileSync(join(家, 'speak-up-config.json'), 'utf8')).目标会话.length === 1)
+  // 取消勾选：两种写法都能一次摘干净
+  const 摘 = await 调('/dsh-speak-up/save', { 目标会话: ['session-' + ID_裸] })
+  报('把它重新勾上（换成另一种写法）后仍然只有一条', 摘.配置.目标会话.length === 1, JSON.stringify(摘.配置.目标会话))
+  const 清空 = await 调('/dsh-speak-up/save', { 目标会话: [] })
+  报('清空之后一条都不剩', 清空.配置.目标会话.length === 0)
+}
+
+// ⭐ 2026-10-23 回归：磁盘上**本来就**存着两种写法（用户就是这种情况）→ 一读就洗干净
+{
+  const 档 = join(家, 'speak-up-config.json')
+  const 坏 = JSON.parse(readFileSync(档, 'utf8'))
+  坏.目标会话 = [ID_裸, 'session-' + ID_裸]
+  writeFileSync(档, JSON.stringify(坏, null, 2), 'utf8')
+  await 调('/dsh-speak-up/state', {})
+  const 洗完 = JSON.parse(readFileSync(档, 'utf8'))
+  报('老文件里的两种写法，读一次就被洗净（不用手改 JSON）', 洗完.目标会话.length === 1, JSON.stringify(洗完.目标会话))
+}
+
 // 老配置（字符串形状，还带逗号）也要能吃
 writeFileSync(join(家, 'speak-up-config.json'), JSON.stringify({ 目标会话: 'sess-abc, ' + ID_长 }), 'utf8')
 st = await 调('/dsh-speak-up/state')
