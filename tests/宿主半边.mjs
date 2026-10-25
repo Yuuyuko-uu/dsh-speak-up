@@ -477,6 +477,20 @@ await new Promise((s) => setTimeout(s, 30))
 报('改了间隔 → 下一轮自动换表（不用重启插件）',
   停表们.length === 表数前 + 1 && 停表们.at(-1).ms === 300000, `表数 ${停表们.length}`)
 
+// ---------- agent/error：仅记录勾选目标，接受 session- 前缀别名 ----------
+await 调('/dsh-speak-up/save', { 目标会话: ['sess-abc', ID_裸] })
+const 发错误 = (agent, message) => { for (const cb of 事件.get('agent/error') || []) cb({ agent, error: new Error(message) }) }
+let 错误前 = 日志.length
+发错误(甲, 'target-error')
+报('agent/error：数组中的目标会话留下错误日志', 日志.length === 错误前 + 1 && 日志.at(-1).includes('target-error'))
+错误前 = 日志.length
+发错误({ id: 'session-' + ID_裸 }, 'alias-error')
+报('agent/error：目标会话前缀别名也匹配', 日志.length === 错误前 + 1 && 日志.at(-1).includes('alias-error'))
+错误前 = 日志.length
+发错误({ id: 'unselected' }, 'ignored-error')
+发错误(null, 'missing-agent')
+报('agent/error：非目标与缺失 agent 不污染日志', 日志.length === 错误前)
+
 // ---------- 坏配置 ----------
 writeFileSync(join(家, 'speak-up-config.json'), '{ 这不是 json', 'utf8')
 const st2 = await 调('/dsh-speak-up/state')
