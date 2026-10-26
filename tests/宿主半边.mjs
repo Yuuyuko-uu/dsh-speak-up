@@ -503,7 +503,42 @@ let 错误前 = 日志.length
 发错误({ id: 'unselected' }, 'ignored-error')
 发错误(null, 'missing-agent')
 报('agent/error：非目标与缺失 agent 不污染日志', 日志.length === 错误前)
+// ---------- UTF-8 BOM 配置（Windows 编辑器可能写入；只认文件开头的 BOM）----------
+{
+  const 新档 = join(家, 'speak-up-config.json')
+  const 旧档 = join(家, 'her-words-config.json')
+  const 原文 = readFileSync(新档, 'utf8')
+  const 合成配置 = {
+    总开关: false, 试运行: false, 目标会话: ['sess-abc'], 间隔分钟: 7,
+    峰谷时区: 'Asia/Shanghai', 触发文案: '合成\uFEFF测试',
+  }
+  const 验配置 = (配置) => 配置.总开关 === false && 配置.试运行 === false &&
+    配置.目标会话.length === 1 && 配置.目标会话[0] === 'sess-abc' &&
+    配置.间隔分钟 === 7 && 配置.峰谷时区 === 'Asia/Shanghai' && 配置.触发文案 === '合成\uFEFF测试'
+  try {
+    for (const BOM of ['', '\uFEFF']) {
+      // 新文件必须优先，不能因为开头有 BOM 就静默读回旧配置。
+      writeFileSync(旧档, JSON.stringify({ 目标会话: ['sess-old'], 间隔分钟: 13 }), 'utf8')
+      writeFileSync(新档, BOM + JSON.stringify(合成配置), 'utf8')
+      const 新状态 = await 调('/dsh-speak-up/state')
+      报(`新配置${BOM ? '有' : '无'} BOM：保留开关、目标、时区和正文，优先于旧文件`, 验配置(新状态.配置))
 
+      // 新文件损坏时仍走原有迁移顺序；旧文件也可以带 BOM。
+      writeFileSync(新档, '\uFEFF{ 这不是 json', 'utf8')
+      writeFileSync(旧档, BOM + JSON.stringify(合成配置), 'utf8')
+      const 旧状态 = await 调('/dsh-speak-up/state')
+      报(`旧配置${BOM ? '有' : '无'} BOM：新文件损坏时仍可读回，正文内 BOM 不变`, 验配置(旧状态.配置))
+    }
+    const 保存 = await 调('/dsh-speak-up/save', { 间隔分钟: 9 })
+    const 保存原文 = readFileSync(新档, 'utf8')
+    报('BOM 配置保存后仍为普通 UTF-8 JSON，保留原有字段',
+      保存.配置.间隔分钟 === 9 && 保存.配置.总开关 === false &&
+      保存原文.charCodeAt(0) !== 0xFEFF && JSON.parse(保存原文).触发文案 === '合成\uFEFF测试')
+  } finally {
+    writeFileSync(新档, 原文, 'utf8')
+    rmSync(旧档, { force: true })
+  }
+}
 // ---------- 坏配置 ----------
 writeFileSync(join(家, 'speak-up-config.json'), '{ 这不是 json', 'utf8')
 const st2 = await 调('/dsh-speak-up/state')
