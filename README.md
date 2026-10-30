@@ -39,6 +39,14 @@ github:Yuuyuko-uu/dsh-speak-up
 dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
 ```
 
+> ⚠ 上面这行会让包管理器去 **clone 仓库**，机器上没装 `git` 会报 `ERR_PNPM_GIT_FETCH_FAILED`。
+> 没 git 就用下面这条 **tarball 直链**，一样能装，不用 git：
+
+```bash
+dsh plugin --profile desktop add https://codeload.github.com/Yuuyuko-uu/dsh-speak-up/tar.gz/refs/heads/main
+```
+
+
 装完**重启一次 DSH**，然后去 **设置 → 主动搭话** 看一眼在不在。
 
 > ⭐ 最省事的一条：把仓库链接贴给你自己的 DSH，说「**帮我装这个插件**」。
