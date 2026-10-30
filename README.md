@@ -30,17 +30,18 @@
 打开 **设置 → 插件 → 安装**，把这一行填进去：
 
 ```
-github:Yuuyuko-uu/dsh-speak-up
+dsh-speak-up
 ```
 
 或者命令行（`--profile` 照你平时那个写；桌面端一般是 `desktop`、网页端是 `web`）：
 
 ```bash
-dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
+dsh plugin --profile desktop add dsh-speak-up
 ```
 
-> ⚠ 上面这行会让包管理器去 **clone 仓库**，机器上没装 `git` 会报 `ERR_PNPM_GIT_FETCH_FAILED`。
-> 没 git 就用下面这条 **tarball 直链**，一样能装，不用 git：
+> 也可以在 npm 上直接看到这个包（含历史版本）：<https://www.npmjs.com/package/dsh-speak-up>
+
+> 上面那条要是碰到网络问题（npm 抽风、或者想固定某一次的代码快照），可以改用 tarball 直链，不用 git：
 
 ```bash
 dsh plugin --profile desktop add https://codeload.github.com/Yuuyuko-uu/dsh-speak-up/tar.gz/refs/heads/main
@@ -106,7 +107,7 @@ dsh plugin --profile desktop add https://codeload.github.com/Yuuyuko-uu/dsh-spea
 
 ```bash
 dsh plugin --profile desktop remove dsh-speak-up
-dsh plugin --profile desktop add github:Yuuyuko-uu/dsh-speak-up
+dsh plugin --profile desktop add dsh-speak-up
 ```
 
 > ⚠️ **必须先卸再装**：直接装可能拿到缓存里的旧副本，装完还是老的。
