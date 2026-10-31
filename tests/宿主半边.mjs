@@ -101,7 +101,7 @@ const 她说话 = (多久以前毫秒 = 0) =>
   事件.get('session/event').forEach((cb) => cb({ id: 'sess-abc' }, { type: 'user/message', time: Date.now() - 多久以前毫秒, data: { source: { kind: 'user' } } }))
 
 // ---------- 基本 ----------
-报('注册了 5 条路由（state/save/roll/new-session/update）', 路由.size === 5, [...路由.keys()].join(' '))
+报('注册了 6 条路由（state/save/roll/new-session/update/install）', 路由.size === 6, [...路由.keys()].join(' '))
 报('定时器挂上（30 分钟）', 停表们.length === 1 && 停表们[0].ms === 1800000)
 let st = await 调('/dsh-speak-up/state')
 报('默认值全对（间隔30 / 峰20 谷60 / 没中+10 上限40 / 冷却20 / 安静1~8 / 20×0.15 / 360×1.5 / 试运行开 / 总开关开 / user）',
