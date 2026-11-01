@@ -99,6 +99,13 @@ const 调 = async (路径, body) => {
 const 滴答 = async (第几个 = 0) => { await 停表们[第几个].cb(); await new Promise((s) => setTimeout(s, 40)) }
 const 她说话 = (多久以前毫秒 = 0) =>
   事件.get('session/event').forEach((cb) => cb({ id: 'sess-abc' }, { type: 'user/message', time: Date.now() - 多久以前毫秒, data: { source: { kind: 'user' } } }))
+// ⭐ 0.2.9（issue #8）：冷却只认「她**真的说出话**」—— 得有一条带非空 text 的 assistant 消息
+const 她开口了 = (多久以前毫秒 = 0, sid = 'sess-abc', 文本 = '嗯，我在呢') =>
+  事件.get('session/event').forEach((cb) => cb({ id: sid }, {
+    type: 'assistant/message',
+    time: Date.now() - 多久以前毫秒,
+    data: { message: { role: 'assistant', content: [{ type: 'text', text: 文本 }] } },
+  }))
 
 // ---------- 基本 ----------
 报('注册了 6 条路由（state/save/roll/new-session/update/install）', 路由.size === 6, [...路由.keys()].join(' '))
@@ -301,11 +308,27 @@ await 调('/dsh-speak-up/save', { 没中加成: 10, 峰时命中线: 100, 谷时
 await 滴答()
 
 // ---------- 搭话冷却（单独一格，0 = 不冷却）----------
-// 先把冷却设成 30，再真发一次（真发会记下「自己上次开口」），然后自动那一轮应该被拦住
+// ⭐ 0.2.9（issue #8）：冷却记的是「她**真的开口了**」，不是「投递成功」。
+//   所以下面每一条「该拦」都要先喂一条 assistant/message，光靠真发是**不该**起冷却的。
+// 先把冷却设成 30，再真发一次（真发只是投递，不该记下「自己上次开口」）
 await 调('/dsh-speak-up/save', { 搭话冷却分钟: 30, 近阈值分钟: 1, 峰时命中线: 100, 谷时命中线: 100 })
 const 真发回 = await 调('/dsh-speak-up/roll', { 模式: '真发' })
 报('冷却：手动真发不受冷却限制（照样发出去）',
   甲.收到的.length >= 1 && 真发回.日志.at(-1).文本.includes('已送出一句'), 真发回.日志.at(-1).文本)
+
+// #8 主案：投递成功、她一个字没说 → **不吃冷却**，下一轮照样掷到送信那一步
+await 滴答()
+报('#8 投递成功但她没说话 → 不消耗冷却（这轮照样走到「本来要往」那一步）',
+  !日志.at(-1).includes('自己刚开过口') && 日志.at(-1).includes('本来要往'), 日志.at(-1))
+
+// #8：只有空白正文（等于没说）→ 也不算开口
+她开口了(0, 'sess-abc', '   ')
+await 滴答()
+报('#8 只有空白正文（想过但没说出口）→ 仍然不吃冷却',
+  !日志.at(-1).includes('自己刚开过口'), 日志.at(-1))
+
+// 真的说了话 → 这才该吃冷却
+她开口了(0)
 await 滴答()
 报('冷却用新那格（近阈值分钟只有 1，仍然按 30 分钟拦住）',
   日志.at(-1).includes('自己刚开过口') && 日志.at(-1).includes('冷却 30 分钟'), 日志.at(-1))
@@ -316,9 +339,9 @@ await 滴答()
 报('冷却 0 = 不冷却：刚开口过也照投（这轮不是被冷却拦住的那句）',
   !日志.at(-1).includes('自己刚开过口'), 日志.at(-1))
 
-// 冷却 30 + 已经过了很久（把近阈值分钟调大不会影响冷却；直接验"20 分钟内不复投"）
+// 冷却 30 + 已经过了很久（把近阈值分钟调大不会影响冷却；直接验"30 分钟内不复投"）
 await 调('/dsh-speak-up/save', { 搭话冷却分钟: 30, 近阈值分钟: 20 })
-await 调('/dsh-speak-up/roll', { 模式: '真发' }) // 再记一次「自己上次开口 = 现在」
+她开口了(0) // 这一次是她真的开口了 → 记下「自己上次开口 = 现在」
 await 滴答() // 立刻再自动投一轮 → 应当在冷却里
 报('冷却 30：刚开口完 1 分钟内再投 → 被拦住不复投',
   日志.at(-1).includes('自己刚开过口') && 日志.at(-1).includes('冷却 30 分钟'), 日志.at(-1))
@@ -452,13 +475,28 @@ const m = 甲.收到的[0]
   甲.收到的.length === 1 && m.role === 'user' && m.source.kind === 'speak-up' &&
   Array.isArray(m.content) && m.content[0].type === 'text' &&
   typeof m.id === 'string' && m.id.length > 0, JSON.stringify(m))
+报('0.2.9：那句念头里带了「现在几点」（宿主的时间注入会被 refreshIntervalMs 跳过，不能只靠它）',
+  /现在这会儿是 \d+ 月 \d+ 日 周[日一二三四五六] \S+ \d{1,2}:\d{2}/.test(m.content[0].text), m.content[0].text)
 
 // ⚠ 这一条现在要显式给「搭话冷却分钟」—— 它以前是偷偷借用「近阈值分钟」的
+// ⭐ 0.2.9：光真发**不**起冷却，所以她得真的开口（喂一条 assistant/message）才拦得住
 await 调('/dsh-speak-up/save', { 搭话冷却分钟: 20 })
 甲.收到的.length = 0
+她开口了(0)
 await 滴答()
 报('自己刚开过口 → 自动这轮不重复（冷却 20 分钟）',
   甲.收到的.length === 0 && 日志.at(-1).includes('刚开过口') && 日志.at(-1).includes('冷却 20 分钟'), 日志.at(-1))
+
+// #8：冷却只认勾着的目标会话 —— 别的会话说话不算「自己开过口」
+// 先把上一次冷却**推到过期**（让「她 21 分钟前说过话」），不然这条会被上一轮的冷却遮住
+她开口了(21 * 60 * 1000, 'sess-abc')
+await 调('/dsh-speak-up/save', { 搭话冷却分钟: 20, 目标会话: ['sess-abc'] })
+甲.收到的.length = 0
+乙.收到的.length = 0
+她开口了(0, ID_长) // 乙那个会话现在在说话，但它没勾上
+await 滴答()
+报('#8 非目标会话说话 → 不算自己开过口（冷却没被点着，这轮照常走到送信那步）',
+  !日志.at(-1).includes('自己刚开过口') && 日志.at(-1).includes('本来要往'), 日志.at(-1))
 
 // ---------- developer 角色 ----------
 await 调('/dsh-speak-up/save', { 角色: 'developer' })
