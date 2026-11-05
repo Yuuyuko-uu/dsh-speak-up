@@ -90,12 +90,27 @@ const 假ctx = {
 
 let 挂 = 0
 const 报 = (标签, 过, 详情) => { if (!过) 挂++; console.log(`${过 ? 'PASS' : 'FAIL'}  ${标签}${详情 ? '  :: ' + 详情 : ''}`) }
-const 造res = () => ({ 体: null, writeHead() {}, end(s) { this.体 = JSON.parse(s) } })
-const 调 = async (路径, body) => {
+const 造res = () => ({
+  码: 0,
+  体: null,
+  原文: '',
+  writeHead(c) { this.码 = c },
+  end(s) {
+    this.原文 = String(s == null ? '' : s)
+    try { this.体 = JSON.parse(this.原文) } catch (e) { this.体 = null }
+  },
+})
+const 调全 = async (路径, body, 选项 = {}) => {
   const res = 造res()
-  await 路由.get(路径)({ [Symbol.asyncIterator]: async function* () { yield Buffer.from(JSON.stringify(body || {})) } }, res)
-  return res.体
+  const req = {
+    method: 选项.method || 'POST',
+    headers: 选项.headers || {},
+    [Symbol.asyncIterator]: async function* () { yield Buffer.from(JSON.stringify(body || {})) },
+  }
+  await 路由.get(路径)(req, res)
+  return res
 }
+const 调 = async (路径, body, 选项) => (await 调全(路径, body, 选项)).体
 const 滴答 = async (第几个 = 0) => { await 停表们[第几个].cb(); await new Promise((s) => setTimeout(s, 40)) }
 const 她说话 = (多久以前毫秒 = 0) =>
   事件.get('session/event').forEach((cb) => cb({ id: 'sess-abc' }, { type: 'user/message', time: Date.now() - 多久以前毫秒, data: { source: { kind: 'user' } } }))
@@ -612,6 +627,36 @@ const st2 = await 调('/dsh-speak-up/state')
   报('ctx.sessionTitle 不在时不崩，而且**标题照样从投影缓存读出来**（那条路不依赖任何服务）',
     !崩 && 结果 && 结果.ok === true && 无服务长.标题 === '示例会话' && 无服务长.标题来源 === '投影缓存 title',
     JSON.stringify(无服务长))
+}
+
+// ---------- 本机接口那道门（0.3.0：跨站、GET 触发动作） ----------
+{
+  const 打 = (路径, 方法, 头) => 调全(路径, {}, { method: 方法, headers: 头 || {} })
+  const 站外 = { origin: 'https://evil.example.com' }
+
+  const g1 = await 打('/dsh-speak-up/roll', 'GET')
+  报('GET /roll 不再真掷（只收 POST，回 405）', g1.码 === 405, String(g1.码))
+  const g2 = await 打('/dsh-speak-up/roll', 'POST', 站外)
+  报('跨站来源 POST /roll：403', g2.码 === 403, String(g2.码))
+  const g3 = await 打('/dsh-speak-up/roll', 'POST', { 'sec-fetch-site': 'cross-site' })
+  报('只有 sec-fetch-site=cross-site 也挡（403）', g3.码 === 403, String(g3.码))
+  const g4 = await 打('/dsh-speak-up/roll', 'POST', { origin: 'dsh-app://app' })
+  报('桌面端自己的来源放行（dsh-app://）', g4.码 === 200, String(g4.码))
+  const g5 = await 打('/dsh-speak-up/roll', 'POST', { origin: 'http://127.0.0.1:5994' })
+  报('本机网页端来源放行', g5.码 === 200, String(g5.码))
+  const g6 = await 打('/dsh-speak-up/roll', 'POST')
+  报('没有 Origin 的本地调用照常放行', g6.码 === 200, String(g6.码))
+
+  const g7 = await 打('/dsh-speak-up/state', 'GET', 站外)
+  报('/state 也挡跨站（标题清单不外泄）', g7.码 === 403, String(g7.码))
+  const g8 = await 打('/dsh-speak-up/save', 'GET', { origin: 'dsh-app://app' })
+  报('GET /save 只收 POST', g8.码 === 405, String(g8.码))
+  const g9 = await 打('/dsh-speak-up/new-session', 'GET', { origin: 'dsh-app://app' })
+  报('GET /new-session 只收 POST', g9.码 === 405, String(g9.码))
+  const g10 = await 打('/dsh-speak-up/update', 'GET', 站外)
+  报('「检查更新」那条也过门', g10.码 === 403, String(g10.码))
+  const g11 = await 打('/dsh-speak-up/install', 'POST', 站外)
+  报('一键更新也过门（跨站装不了东西）', g11.码 === 403, String(g11.码))
 }
 
 // ---------- 卸载 ----------
